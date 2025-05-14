@@ -13,8 +13,9 @@ class BybitHandler:
             testnet=False
         )
         self.coin2price = {"updated":None}
-        self.update_current_prices()
         self.precision_cache = {}  # кэшируем точности
+        self.coin2history = {}
+        self.update_current_prices()
 
     def update_current_prices(self, UpdDayLimit=None):
         now = datetime.now()
@@ -25,7 +26,18 @@ class BybitHandler:
         tickers = self.session.get_tickers(category="spot")
         self.coin2price = {"updated":now}
         for item in tickers['result']['list']:
-            self.coin2price[item["symbol"]] = float(item["lastPrice"])
+            symbol = item["symbol"]
+            last_price = float(item["lastPrice"])
+            day_change = float(item["price24hPcnt"])
+            self.coin2price[symbol] = [last_price, day_change]
+
+            if symbol not in self.coin2history:
+                self.coin2history[symbol] = []
+            self.coin2history[symbol].append(last_price)
+
+            # Оставим только 12 последних цен (обновляется каждые 5 мин → 1 час)
+            if len(self.coin2history[symbol]) > 12:
+                self.coin2history[symbol] = self.coin2history[symbol][-12:]
     
     def get_avg_price(self, symbol):
         cursor = None
@@ -66,7 +78,7 @@ class BybitHandler:
                 if symbol != "USDT":
                     size = float(coin["walletBalance"])
                     symbol_full = f"{symbol}USDT"
-                    price = self.coin2price.get(symbol_full, 0)
+                    price, _ = self.coin2price.get(symbol_full, 0)
                     amount = size * price
                     if amount > 1:
                         positions.append({"symbol": symbol, "size": size, "price": price, "amount": amount})
