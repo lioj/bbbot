@@ -59,7 +59,7 @@ async def signal_watcher(app, bb: BybitHandler):
             if len(price_history) < 2:
                 continue  # нужно хотя бы 2 точки
 
-            max_price = min(price_history)
+            max_price = max(price_history)
             change = (last_price - max_price) / max_price * 100
 
             if change <= PERCENT_THRESHOLD:
