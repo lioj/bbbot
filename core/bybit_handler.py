@@ -1,5 +1,6 @@
 from pybit.unified_trading import HTTP
 from config.settings import BYBIT_API_KEY, BYBIT_API_SECRET
+from datetime import datetime, timedelta
 
 def round_value(value, precision):
     return float(f"{value:.{precision}f}")
@@ -11,12 +12,18 @@ class BybitHandler:
             api_secret=BYBIT_API_SECRET,
             testnet=False
         )
+        self.coin2price = {"updated":None}
         self.update_current_prices()
         self.precision_cache = {}  # кэшируем точности
 
-    def update_current_prices(self):
+    def update_current_prices(self, UpdDayLimit=None):
+        now = datetime.now()
+        if UpdDayLimit is not None and self.coin2price["updated"] is not None:
+            if (now - self.coin2price["updated"]).days <= UpdDayLimit:
+                # Обновление не требуется
+                return
         tickers = self.session.get_tickers(category="spot")
-        self.coin2price = {}
+        self.coin2price = {"updated":now}
         for item in tickers['result']['list']:
             self.coin2price[item["symbol"]] = float(item["lastPrice"])
     
@@ -53,6 +60,7 @@ class BybitHandler:
             result = self.session.get_wallet_balance(accountType="UNIFIED")
             coins = result["result"]["list"][0]["coin"]
             positions = []
+            self.update_current_prices(UpdDayLimit=1)
             for coin in coins:
                 symbol = coin["coin"]
                 if symbol != "USDT":
