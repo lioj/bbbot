@@ -27,6 +27,8 @@ class BybitHandler:
         self.coin2price = {"updated":now}
         for item in tickers['result']['list']:
             symbol = item["symbol"]
+            if not symbol.endswith("USDT"):
+                continue
             last_price = float(item["lastPrice"])
             day_change = float(item["price24hPcnt"])
             self.coin2price[symbol] = [last_price, day_change]
