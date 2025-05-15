@@ -29,7 +29,7 @@ async def handle_sell_order_recomendations_command(update: Update, context: Cont
 
     message_lines = ["📉 *Рекомендации по продаже:*"]
     for symbol, price, qty in recommendations:
-        message_lines.append(f"• `{symbol}` — Цена: *{price:.4f}*, Кол-во: *{qty}*")
+        message_lines.append(f"• `{symbol}` — Цена: *{price}*, Кол-во: *{qty}*")
 
     message_text = "\n".join(message_lines)
     await update.message.reply_text(message_text, parse_mode='Markdown')
