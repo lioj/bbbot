@@ -37,6 +37,22 @@ async def handle_sell_order_recomendations_command(update: Update, context: Cont
     await update.message.reply_text(message_text, parse_mode='Markdown')
 
 
+async def handle_test_order_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    args = context.args
+    if not args or len(args) < 2:
+        await update.message.reply_text("Укажи монету, например: /testorder buy BTCUSDT 2 2")
+        return
+    type = args[0].upper()
+    symbol = args[1].upper()
+    qty = "5"
+    tp_percent = "1"
+    if len(args) > 2:
+        qty = args[2]
+        if len(args) > 3:
+            tp_percent = args[3]
+    await update.message.reply_text(f"Запрос {type} {symbol} объемом {qty} и TP {tp_percent}% получен (ручной режим).")
+
+
 async def signal_watcher(app, bb: BybitHandler):
     while True:
         bb.update_current_prices()
