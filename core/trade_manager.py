@@ -48,6 +48,9 @@ async def signal_watcher(app, bb: BybitHandler):
             if symbol == "updated":
                 continue
 
+            if not symbol.endswith("USDT"):
+                continue
+
             last_price, day_change = data
             if day_change >= 0:
                 continue  # только упавшие
