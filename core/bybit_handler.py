@@ -30,8 +30,9 @@ class BybitHandler:
             if not symbol.endswith("USDT"):
                 continue
             last_price = float(item["lastPrice"])
-            day_change = float(item["price24hPcnt"])
-            self.coin2price[symbol] = [last_price, day_change]
+            day_change = float(item["price24hPcnt"])*100
+            turnover24h = float(item["turnover24h"])
+            self.coin2price[symbol] = [last_price, day_change, turnover24h]
 
             if symbol not in self.coin2history:
                 self.coin2history[symbol] = []

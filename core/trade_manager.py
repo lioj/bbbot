@@ -11,6 +11,7 @@ ALERTED_COINS = {}
 ALERTED_COINS_UP = {}
 PERCENT_THRESHOLD = -5  # %
 PERCENT_THRESHOLD_UP = 5
+TURNOVER_THRESHOLD=10000000
 
 async def handle_buy_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args
@@ -87,6 +88,7 @@ async def signal_watcher(app, bb: BybitHandler):
         for sym in list(ALERTED_COINS):
             if now - ALERTED_COINS[sym] > timedelta(hours=1):
                 del ALERTED_COINS[sym]
+        for sym in list(ALERTED_COINS_UP):
             if now - ALERTED_COINS_UP[sym] > timedelta(hours=1):
                 del ALERTED_COINS_UP[sym]
 
@@ -94,42 +96,42 @@ async def signal_watcher(app, bb: BybitHandler):
             if symbol == "updated":
                 continue
 
-            last_price, day_change = data
-            if day_change >= 0:
-                continue  # только упавшие
+            last_price, change24h, turnover24h = data
+            if change24h >= 0 and turnover24h >= TURNOVER_THRESHOLD:
+                continue  # только упавшие и только с определенным объемом
 
             price_history = bb.coin2history.get(symbol, [])
-            if len(price_history) < 10:
+            if len(price_history) < 2:
                 continue  # нужно хотя бы 12 точки
+
 
             max_price = max(price_history)
             mean_price = sum(price_history) / len(price_history)
-            down_change = (last_price - max_price) / max_price * 100
-            down_change_from_mean = (last_price - mean_price) / mean_price * 100
-            up_change = (last_price - max_price) / max_price * 100
+            change = (last_price - max_price) / max_price * 100
+            change_from_mean = (last_price - mean_price) / mean_price * 100
 
             if symbol not in ALERTED_COINS\
-                            and down_change <= PERCENT_THRESHOLD:
+                            and change <= PERCENT_THRESHOLD:
                 ALERTED_COINS[symbol] = now  # сохраняем время
 
                 await app.bot.send_message(
                     chat_id=TELEGRAM_CHAT_ID,
                     text=(
                         f"📉 <b>{symbol}</b> упал сильнее после падения за день!\n"
-                        f"📊 Падение: <b>{down_change:.2f}% , {down_change_from_mean}%</b>"
+                        f"📊 Падение: <b>{change:.2f}% , {change_from_mean:.2f}%</b>"
                     ),
                     parse_mode="HTML"
                 )
 
             if symbol not in ALERTED_COINS_UP\
-                    and up_change >= PERCENT_THRESHOLD_UP:
+                    and change >= PERCENT_THRESHOLD_UP:
                 ALERTED_COINS_UP[symbol] = now  # сохраняем время
 
                 await app.bot.send_message(
                     chat_id=TELEGRAM_CHAT_ID,
                     text=(
                         f"📉 <b>{symbol}</b> подрос после падения за день!\n"
-                        f"📊 Рост: <b>{up_change:.2f}% </b>"
+                        f"📊 Рост: <b>{change:.2f}% </b>"
                     ),
                     parse_mode="HTML"
                 )
