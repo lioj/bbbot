@@ -4,6 +4,8 @@ from core.bybit_handler import BybitHandler
 from config.settings import TELEGRAM_CHAT_ID, TELEGRAM_CHAT_ID
 import asyncio
 from datetime import datetime,timedelta
+from pybit.unified_trading import HTTP
+from config.settings import TEST_BYBIT_API_KEY, TEST_BYBIT_API_SECRET
 
 ALERTED_COINS = {}
 ALERTED_COINS_UP = {}
@@ -42,15 +44,39 @@ async def handle_test_order_command(update: Update, context: ContextTypes.DEFAUL
     if not args or len(args) < 2:
         await update.message.reply_text("Укажи монету, например: /testorder buy BTCUSDT 2 2")
         return
-    type = args[0].upper()
+    side = args[0].upper()
     symbol = args[1].upper()
-    qty = "5"
-    tp_percent = "1"
-    if len(args) > 2:
-        qty = args[2]
-        if len(args) > 3:
-            tp_percent = args[3]
-    await update.message.reply_text(f"Запрос {type} {symbol} объемом {qty} и TP {tp_percent}% получен (ручной режим).")
+    qty = float(args[2]) if len(args) > 2 else 5
+    tp_percent = float(args[3]) if len(args) > 3 else 1
+
+    session = HTTP(
+            api_key=TEST_BYBIT_API_KEY,
+            api_secret=TEST_BYBIT_API_SECRET,
+            testnet=True
+        )
+    
+    try:
+    
+        ticker = session.get_tickers(category="spot", symbol=symbol)
+        current_price = float(ticker["result"]["list"][0]["lastPrice"])
+        
+
+        session.place_order(
+            category="spot",
+            symbol=symbol,
+            side=side,
+            orderType="Limit",
+            qty=qty,
+            price=current_price,
+            isLeverage=0,
+        )
+
+        await update.message.reply_text(f"Запрос {side} {symbol} объемом {qty} и TP {tp_percent}% получен (ручной режим).")
+
+    except Exception as e:
+        await update.message.reply_text(f"Ошибка при создании ордера: {e}")
+        return
+    
 
 
 async def signal_watcher(app, bb: BybitHandler):
@@ -69,7 +95,7 @@ async def signal_watcher(app, bb: BybitHandler):
                 continue
 
             last_price, day_change = data
-            if day_change >= -3:
+            if day_change >= 0:
                 continue  # только упавшие
 
             price_history = bb.coin2history.get(symbol, [])
