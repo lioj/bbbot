@@ -81,7 +81,7 @@ class BybitHandler:
                 if symbol != "USDT":
                     size = float(coin["walletBalance"])
                     symbol_full = f"{symbol}USDT"
-                    price, _ = self.coin2price.get(symbol_full, 0)
+                    price, _, _ = self.coin2price.get(symbol_full, 0)
                     amount = size * price
                     if amount > 1:
                         positions.append({"symbol": symbol, "size": size, "price": price, "amount": amount})
