@@ -9,9 +9,9 @@ from config.settings import TEST_BYBIT_API_KEY, TEST_BYBIT_API_SECRET
 
 ALERTED_COINS = {}
 ALERTED_COINS_UP = {}
-PERCENT_THRESHOLD = -5  # %
-PERCENT_THRESHOLD_UP = 5
-TURNOVER_THRESHOLD=10000000
+PERCENT_THRESHOLD = -4  # %
+PERCENT_THRESHOLD_UP = 4
+TURNOVER_THRESHOLD=20000000
 
 async def handle_buy_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args
@@ -97,11 +97,11 @@ async def signal_watcher(app, bb: BybitHandler):
                 continue
 
             last_price, change24h, turnover24h = data
-            if change24h >= 0 and turnover24h >= TURNOVER_THRESHOLD:
+            if turnover24h >= TURNOVER_THRESHOLD:
                 continue  # только упавшие и только с определенным объемом
 
             price_history = bb.coin2history.get(symbol, [])
-            if len(price_history) < 2:
+            if len(price_history) < 9:
                 continue  # нужно хотя бы 12 точки
 
 
