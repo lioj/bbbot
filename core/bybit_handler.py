@@ -40,7 +40,7 @@ class BybitHandler:
 
             # Оставим только 12 последних цен (обновляется каждые 5 мин → 1 час)
             if len(self.coin2history[symbol]) > 12:
-                self.coin2history[symbol] = self.coin2history[symbol][-12:]
+                self.coin2history[symbol] = self.coin2history[symbol][1:]
     
     def get_avg_price(self, symbol):
         cursor = None
